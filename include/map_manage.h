@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 
+#include <opencv2/opencv.hpp>
 #include "occupied_grid_map.h"
 
 namespace map
@@ -16,6 +17,8 @@ public:
 	static bool saveOccupiedGridMap( const std::string &file_name, const grid::OccupiedGridMap<T> &map );
 
 	static const grid::OccupiedGridMap<T> loadOccupiedGridMap( const std::string &file_name );
+
+	static void displayOccupiedGridMap( grid::OccupiedGridMap<T> &map );
 
 private:
 	static std::ofstream outfile;	
@@ -147,7 +150,27 @@ const grid::OccupiedGridMap<T> MapManagement<T>::loadOccupiedGridMap( const std:
 	return map;
 }
 
+template<typename T>
+void MapManagement<T>::displayOccupiedGridMap( grid::OccupiedGridMap<T> &map )
+{
+	cv::Mat image = cv::Mat::zeros( map.getSizeX(), map.getSizeY(), CV_8UC3);	
+	int occupiedCount = 0;
+        for( int i = 0; i < map.getSizeX(); i ++ ){
+        	for( int j = 0; j < map.getSizeY(); j ++ ){
+                	if( map.isCellFree( i, j ) ){
+                        	cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(255, 255, 255), -1);
+                        }
+                        else if( map.isCellOccupied( i, j ) ){
+                                occupiedCount ++;
+                                cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(0, 0, 255), -1);
+                        }
+                }
+	}
 
+	std::cout<<"occupied grid number : "<<occupiedCount<<std::endl;
+        cv::imshow( "map", image );
+	cv::waitKey( 0 );
+}
 
 }
 
