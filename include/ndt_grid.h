@@ -168,6 +168,7 @@ public:
 			
 			if ( std::isnan( delta_norm ) || delta_norm > 1 || delta_norm < -1 ) {
 				std::cout << "nan ..." << std::endl;
+				score = 65536;
 				return false;
 			}	
 		}
@@ -264,7 +265,7 @@ private:
 
 		PoseType delta_p = -H.inverse() * b;
 		p += delta_p;
-		std::cout<<"delta_p.norm() = "<<delta_p.norm()<<std::endl;
+		//std::cout<<"delta_p.norm() = "<<delta_p.norm()<<std::endl;
 		delta_norm = delta_p.norm();
 	}
 
@@ -347,7 +348,7 @@ public:
         	}
 
         	cv::imshow( "scan", image );
-        	cv::waitKey(0);
+        	cv::waitKey(10);
 	}
 
 private:

@@ -35,7 +35,8 @@ public:
                 }
                 std::cerr<<"Construct The Scan Match Method !"<<std::endl;
 
-		*grid_map_ = map::MapManagement<float>::loadOccupiedGridMap( file_name );
+		*grid_map_ = map::MapManagement<DataType>::loadOccupiedGridMap( file_name );
+		map::MapManagement<DataType>::displayOccupiedGridMap( *grid_map_ );
 	}
 
 	~Localization()
@@ -53,7 +54,7 @@ public:
 		Eigen::Matrix<DataType, 3, 1> new_pose_estimated;
 	
 		if( !map_without_matching ){
-                        new_pose_estimated = scan_match_->scanToMap( *grid_map_, robot_pose_in_world, scan, covarince_matrix_, 20 );
+                        new_pose_estimated = scan_match_->scanToMap( *grid_map_, robot_pose_in_world, scan, covarince_matrix_, 50 );
                 }
                 else {
                         new_pose_estimated = robot_pose_in_world;
@@ -67,19 +68,9 @@ public:
                 return last_scan_match_pose_;
         }
 
-	const Eigen::Matrix<DataType, 3, 1> getInitializationPose( const std::string &key_scan_file_name, const std::string &key_pose_file_name, const sensor::LaserScan &curr_scan ) const
+	const Eigen::Matrix<DataType, 3, 1> getInitializationPose( const std::string &key_scan_file_name, const std::string &key_pose_file_name, const sensor::LaserScan &curr_scan )
 	{
-		std::vector<sensor::LaserScan> candidate_scans;
 		std::vector<Eigen::Matrix<DataType, 3, 1>> candidate_poses;
-	
-		simulation::Simulation scan_read;
-		scan_read.openSimulationFile( key_scan_file_name );		
-		
-		while( !scan_read.endOfFile() ){
-			sensor::LaserScan scan;
-			scan_read.readAFrameData( scan );
-			candidate_scans.push_back( scan );
-		}
 
 		std::ifstream odom_read( key_pose_file_name, std::ifstream::in );	
 		if( !odom_read.is_open() ){
@@ -103,11 +94,8 @@ public:
 			}	
 			candidate_poses.push_back( pose );
 		}
+		odom_read.close();
 
-		if( candidate_poses.size() != candidate_scans.size() ){
-			std::cerr<<"Files are wrong !"<<std::endl;
-			exit(-1);
-		}
 
 		ndt::NdtGrid<DataType> ndt;
 		std::vector<DataType> scores;
@@ -115,15 +103,24 @@ public:
 
 		sensor::ScanContainer required_container;
         	laserData2Container( curr_scan, required_container );
-		for( int i = 0; i < candidate_poses.size(); i ++ ){
+
+		simulation::Simulation scan_read;
+		scan_read.openSimulationFile( key_scan_file_name );
+		
+		while( !scan_read.endOfFile() ){
+			sensor::LaserScan candidate_scan;
+			scan_read.readAFrameData( candidate_scan );
+			std::cout<<"-------------- "<<scan_read.getFrameCount()<<" -------------"<<std::endl;
 			sensor::ScanContainer candidate_container;
-                	laserData2Container( candidate_poses[i], candidate_container );
+			laserData2Container( candidate_scan, candidate_container );
 			Eigen::Matrix<DataType, 3, 1> p( 0.0, 0.0, 0.0 );
-			ndt.ndtProcess( required_container, candidate_container, p );
+                        ndt.ndtProcess( required_container, candidate_container, p );
 			DataType score = ndt.getMatchScore();
+			std::cout<<"score  = "<<score<<std::endl;
 			scores.push_back( score );
-			deltas.push_back( deltas );
+                        deltas.push_back( p );
 		}
+		scan_read.closeSimulationFile();
 		
 		int position = -1;
 		auto it = std::min_element( scores.begin(), scores.end() );
@@ -141,25 +138,25 @@ public:
 	}
 
 	void laserData2Container( const sensor::LaserScan &scan, sensor::ScanContainer &container )
-{
-        size_t size = 1440;
+	{
+        	size_t size = 1440;
 
-        float angle = -3.14159f;
-        container.clear();
+	        float angle = -3.14159f;
+        	container.clear();
 
-        for( int i = 0; i < size; i ++ ){ 
-                float dist = scan.ranges[ i ];
+	        for( int i = 0; i < size; i ++ ){ 
+        	        float dist = scan.ranges[ i ];
 
-                if( dist >= 0.0099999998f && dist <= 8.0000000000f ){
-                        //dist *= scaleToMap;
-                        container.addData( Eigen::Vector2f( cos(angle) * dist, sin(angle) * dist ) );
-                }
+                	if( dist >= 0.0099999998f && dist <= 8.0000000000f ){
+                        	//dist *= scaleToMap;
+	                        container.addData( Eigen::Vector2f( cos(angle) * dist, sin(angle) * dist ) );
+        	        }
 
-                angle += 0.0043633231f;
-        }
+                	angle += 0.0043633231f;
+	        }
 
-        std::cout<<"Scan Container Size: "<<container.getSize()<<std::endl;
-}
+        	std::cout<<"Scan Container Size: "<<container.getSize()<<std::endl;
+	}
 
 	bool isPoseInitialized() const
 	{
