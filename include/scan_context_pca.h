@@ -146,6 +146,10 @@ public:
 	
 		std::cout<<"loop id = "<<loop_id<<", min dist = "<<min_dist<<std::endl;
 		std::cout<<"looped pose: "<<std::endl<<key_poses[loop_id]<<std::endl<<"current pose : "<<std::endl<<key_poses[curr_index]<<std::endl;
+
+		if( min_dist > 0.4f ){
+			return -1;
+		}
                 return loop_id;
         }
 

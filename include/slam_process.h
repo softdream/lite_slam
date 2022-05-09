@@ -112,9 +112,6 @@ public:
 
 			grid_map_->updateMapByScan( scan, new_pose_estimated );
                 	last_map_update_pose_ = new_pose_estimated;
-        		
-			// key pose
-			key_poses_.push_back( new_pose_estimated );
 		}
 
 	}
@@ -159,19 +156,57 @@ public:
 				}
 			}
 		}
+	
+		Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( last_map_update_pose_ );
+		cv::Point2d pose_img( pose[0], pose[1] );
+		cv::circle(image, pose_img, 3, cv::Scalar(0, 255, 0), -1);
 
 		cv::imshow( "map", image );
 	}
+	
+	void displayMap( cv::Mat &image, 
+			 const std::vector<Eigen::Matrix<DataType, 3, 1>> &key_poses,
+			 const std::vector<Eigen::Matrix<DataType, 3, 1>> &loop_poses_old, 
+			 const std::vector<Eigen::Matrix<DataType, 3, 1>> &loop_poses_new )
+        {
+                int occupiedCount = 0;
+                for( int i = 0; i < grid_map_->getSizeX(); i ++ ){
+                        for( int j = 0; j < grid_map_->getSizeY(); j ++ ){
+                                if( grid_map_->isCellFree( i, j ) ){
+                                        cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(255, 255, 255), -1);
+                                }
+                                else if( grid_map_->isCellOccupied( i, j ) ){
+                                        occupiedCount ++;
+                                        cv::circle(image, cv::Point2d(i, j), 1, cv::Scalar(0, 0, 255), -1);
+                                }
+                        }
+                }
+
+		for( size_t i = 0; i < key_poses.size(); i ++ ){
+			Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( key_poses[i] );
+			cv::Point2d pose_img( pose[0], pose[1] );
+                	cv::circle(image, pose_img, 1, cv::Scalar(0, 255, 0), -1);
+		}
+
+		for( size_t i = 0; i < loop_poses_old.size(); i ++ ){
+			Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( loop_poses_old[i] );
+			cv::Point2d pose_img( pose[0], pose[1] );
+                        cv::circle( image, pose_img, 2, cv::Scalar( 0, 0, 255 ), -1 );
+		}
+	
+		for( size_t i = 0; i < loop_poses_new.size(); i ++ ){
+			Eigen::Matrix<DataType, 3, 1> pose = grid_map_->robotPoseWorld2Map( loop_poses_new[i] );
+			cv::Point2d pose_img( pose[0], pose[1] );
+                        cv::circle( image, pose_img, 2, cv::Scalar( 255, 0, 0 ), -1 );
+		} 	
+
+                cv::imshow( "map", image );
+        }
 
 	//
 	const grid::OccupiedGridMap<T>& getOccupiedGridMap() const
 	{
 		return * grid_map_;
-	}
-
-	const std::vector<Eigen::Matrix<DataType, 3, 1>>& getKeyPoses() const
-	{
-		return key_poses_;
 	}
 
 private:
@@ -203,8 +238,6 @@ private:
 private:
 	match::ScanMatchMethod<T> *scan_match_;
 	grid::OccupiedGridMap<T> *grid_map_;
-
-	std::vector<Eigen::Matrix<DataType, 3, 1>> key_poses_;
 
 	// ------------ Parameters -------------- //
 	DataType minDistanceDiffForMapUpdate = 0.4;

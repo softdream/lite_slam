@@ -54,7 +54,10 @@ int main()
 	simulation.openSimulationFile( "../../test_data/laser_data.txt" );
 
 	Eigen::Vector3f robot_pose( 0.0f, 0.0f, 0.0f );
-	
+	std::vector<Eigen::Vector3f> key_poses;
+	std::vector<Eigen::Vector3f> loop_poses_old;
+	std::vector<Eigen::Vector3f> loop_poses_new;
+
 	while( !simulation.endOfFile() ){
 		sensor::LaserScan scan;
 		sensor::ScanContainer scan_container;
@@ -68,6 +71,8 @@ int main()
 			slam.processTheFirstScan( robot_pose, scan_container );
 			if( simulation.getFrameCount() == 10 ){
 				slam.displayMap( image );
+				
+				key_poses.push_back( robot_pose );
 			}
 		}
 		else {
@@ -83,7 +88,15 @@ int main()
                         std::cout<<"------------------"<<std::endl;
 
 			if( slam.isKeyFrame() ){
-				slam.displayMap( image );
+				key_poses.push_back( robot_pose );
+
+				// loop closure detect
+				int loop_id = scan_context.detectLoopClosure( scan, key_poses.size() - 1, key_poses );
+				if( loop_id != -1 ){
+					loop_poses_old.push_back( robot_pose );	
+					loop_poses_new.push_back( key_poses[loop_id] );
+				}
+				slam.displayMap( image, key_poses, loop_poses_old, loop_poses_new );
 			}
 		}
 		
@@ -91,8 +104,9 @@ int main()
 		cv::waitKey(5);
 	}
 
-	map::MapManagement<float>::saveOccupiedGridMap( "test.map", slam.getOccupiedGridMap() );
+	//map::MapManagement<float>::saveOccupiedGridMap( "test.map", slam.getOccupiedGridMap() );
 
+	cv::waitKey(0);
 	simulation.closeSimulationFile();
 
 	return 0;
