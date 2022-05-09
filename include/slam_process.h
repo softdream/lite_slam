@@ -112,7 +112,10 @@ public:
 
 			grid_map_->updateMapByScan( scan, new_pose_estimated );
                 	last_map_update_pose_ = new_pose_estimated;
-        	}
+        		
+			// key pose
+			key_poses_.push_back( new_pose_estimated );
+		}
 
 	}
 
@@ -166,6 +169,11 @@ public:
 		return * grid_map_;
 	}
 
+	const std::vector<Eigen::Matrix<DataType, 3, 1>>& getKeyPoses() const
+	{
+		return key_poses_;
+	}
+
 private:
 	bool poseDiffLargerThan( const Eigen::Matrix<DataType, 3, 1> &pose_old, const Eigen::Matrix<DataType, 3, 1> &pose_new )	
 	{
@@ -195,6 +203,8 @@ private:
 private:
 	match::ScanMatchMethod<T> *scan_match_;
 	grid::OccupiedGridMap<T> *grid_map_;
+
+	std::vector<Eigen::Matrix<DataType, 3, 1>> key_poses_;
 
 	// ------------ Parameters -------------- //
 	DataType minDistanceDiffForMapUpdate = 0.4;
