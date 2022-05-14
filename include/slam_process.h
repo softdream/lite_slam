@@ -98,7 +98,7 @@ public:
 		Eigen::Matrix<DataType, 3, 1> new_pose_estimated;
 		
 		if( !map_without_matching ){
-			new_pose_estimated = scan_match_->scanToMap( *grid_map_, robot_pose_in_world, scan, covarince_matrix_, 20 );
+			new_pose_estimated = scan_match_->scanToMap( *grid_map_, robot_pose_in_world, scan, covarince_matrix_, 10 );
 		}
 		else {
 			new_pose_estimated = robot_pose_in_world;

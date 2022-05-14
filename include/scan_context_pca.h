@@ -178,8 +178,8 @@ private:
 
 	std::unique_ptr<KDTree> kdtree;
 
-	int NUM_EXCLUDE_RECENT = 30;
-	int TREE_MAKING_PERIOD = 10;
+	int NUM_EXCLUDE_RECENT = 15;
+	int TREE_MAKING_PERIOD = 5;
 	int tree_making_period_count = 0;
 };
 

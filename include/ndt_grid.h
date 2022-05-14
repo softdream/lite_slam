@@ -162,7 +162,7 @@ public:
 		int iteration = 0;
 		for( ; iteration < max_iterations; iteration ++ ){
 			
-			showTwoScanFrame( first_scan, second_scan, p );	
+			//showTwoScanFrame( first_scan, second_scan, p );	
 			
 			estimateTransformationOnce( second_scan, p );
 			
